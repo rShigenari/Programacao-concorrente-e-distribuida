@@ -1,0 +1,30 @@
+package javaLockA;
+
+public class CalcThE{
+	public static void main(String[] args){
+	int MaxThreads = 3;
+        int count = 10;
+        int COUNT_LIMIT = 12;
+		Thread[] th;
+		RunThE[] rh;
+		
+		rh = new RunThE[MaxThreads];
+		th = new Thread[MaxThreads];		
+
+		for(int i=0; i<MaxThreads; i++){
+			int id = i+1;
+			rh[i] = new RunThE(id,MaxThreads,count,COUNT_LIMIT);
+			th[i] = new Thread(rh[i]);
+			th[i].start();
+		}
+		
+	try {
+            for(int i=0; i<MaxThreads; i++)
+                th[i].join();           
+        } catch (InterruptedException e)
+        { System.out.println("Excecao"); }
+
+        System.out.println("Main(): Waited on " + MaxThreads + " threads. Final value of counter = " + rh[0].getCounter() + ". Done");
+	}
+}
+

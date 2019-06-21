@@ -1,0 +1,64 @@
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+
+public class RunThE implements Runnable{
+    static final Lock locker = new ReentrantLock();
+    static final Condition conditionVariable = locker.newCondition();
+    private static int numThreads, tCounter, counterLimit;
+    private static int counter;
+    private int id;
+
+	public RunThreads(int id, int numThreads, int tCounter, int counterLimit){
+        	
+            	RunThreads.numThreads = numThreads;
+            	RunThreads.tCounter = tCounter;
+            	RunThreads.counterLimit = counterLimit;
+            	RunThreads.counter = 0;
+		this.id = id;
+	}
+    public int getCounter(){
+	return RunThreads.counter;
+    }
+	public void run(){
+        if(this.id==1){
+            // watch_counter()            
+            System.out.printf("Starting watch_counter(): Thread %d\n", this.id);            
+            RunThE.locker.lock();
+            try {
+                if(RunThreads.counter<RunThreads.counterLimit){
+                    System.out.printf("watch_counter(): Thread %d, going into wait...\n", this.id);
+                    RunThreads.conditionVariable.await();
+                    System.out.printf("watch_counter(): Thread %d, condition signal received\n", this.id);
+                    RunThreads.counter += 125;
+                    System.out.printf("watch_counter(): Thread %d, now counter = %d\n", this.id, RunThreads.counter);
+                }
+                RunThreads.locker.unlock();
+            } catch (InterruptedException e){
+                    System.err.println(e.toString());
+            }            
+        }
+        else{
+            // inc_counter()
+            System.out.printf("Starting inc_counter(): Thread %d\n", this.id);
+            for(int i=0; i<tCounter; i++){
+                locker.lock();
+                RunThreads.counter++;
+                if(RunThreads.counter==RunThreads.counterLimit){
+                  System.out.printf("inc_counter(): Thread %d, counter = %d, threshold reached\n", this.id, RunThreads.counter);
+                  RunThreads.conditionVariable.signal();
+                  System.out.printf("inc_counter(): Thread %d, counter = %d, just sent signal\n", this.id, RunThreads.counter);
+                }
+                System.out.printf("inc_counter(): Thread %d, counter = %d, unlocking locker\n", this.id, RunThreads.counter);
+                locker.unlock();
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e){
+                    System.err.println(e.toString());
+                }
+            }
+        }
+	}
+}
+
